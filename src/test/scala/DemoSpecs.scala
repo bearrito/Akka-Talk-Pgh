@@ -8,15 +8,14 @@
 
 import akka.routing.{ScatterGatherFirstCompletedRouter, BroadcastRouter, RoundRobinRouter}
 import akka.testkit._
-import akka.testkit.TestFSMRef._
 import akka.actor._
 import akka.pattern.ask
+import akka.transactor.Coordinated
 import com.typesafe.config.ConfigFactory
-import concurrent.Await
-import DemoFSM.SodaFSM
 import java.lang.IllegalArgumentException
 import org.scalatest._
 import scala.concurrent.duration._
+import scala.concurrent.Await
 
 
 import DemoActors._
@@ -100,9 +99,9 @@ class DemoSpecs extends FunSuite {
 
       val testActorRef = TestActorRef[ShardActor]
       val actorRef =   testActorRef.actorRef
-      assert(testActorRef.underlyingActor.state == 0)
+      assert(testActorRef.underlyingActor.requestsReceived == 0)
       actorRef ! ShardRequest
-      assert(testActorRef.underlyingActor.state == 1)
+      assert(testActorRef.underlyingActor.requestsReceived == 1)
       system.shutdown()
 
 
@@ -118,9 +117,9 @@ class DemoSpecs extends FunSuite {
 
     val actorRef = TestActorRef[ShardActor]
 
-    assert(actorRef.underlyingActor.state == 0)
+    assert(actorRef.underlyingActor.requestsReceived == 0)
     actorRef ! ShardRequest
-    assert(actorRef.underlyingActor.state == 1)
+    assert(actorRef.underlyingActor.requestsReceived == 1)
 
     system.shutdown()
 
@@ -177,8 +176,7 @@ class DemoSpecs2 (_system : ActorSystem)  extends TestKit(_system) with FunSuite
 
     implicit val timeout = akka.util.Timeout(10 seconds)
     val roundRobin = system.actorOf(Props[ShardActor].withRouter(
-      RoundRobinRouter(nrOfInstances = 2)),name = "router")
-    println("Name *************************" + system.name)
+    RoundRobinRouter(nrOfInstances = 2)),name = "router")
     roundRobin ! Ping("ping")
     roundRobin ! Ping("ping")
 
@@ -365,6 +363,62 @@ class DemoSpecs4 (_system : ActorSystem)  extends TestKit(_system) with FunSuite
       assert(fsm.stateData == Uninitialized(100,5))
 
     }
+
+
+  }
+
+  test("Verify we can run in transaction"){
+    val system = ActorSystem("app")
+
+    val counter1 = system.actorOf(Props[Counter], name = "counter1")
+    val counter2 = system.actorOf(Props[Counter], name = "counter2")
+
+    implicit val timeout = akka.util.Timeout(5 seconds)
+
+    counter1 ! Coordinated(Increment(Some(counter2)))
+
+    val maybeCount = Await.result(counter1 ? GetCount, timeout.duration)
+    assert(maybeCount.isInstanceOf[Int])
+    val count = maybeCount.asInstanceOf[Int]
+    assert(count == 1)
+
+
+
+  }
+  test("Verify we can update shards in a transaction"){
+
+    val system = ActorSystem("app")
+    implicit val timeout = akka.util.Timeout(10 seconds)
+    val shard1 = system.actorOf(Props[ShardActor], name= "shard1")
+    val shard2 = system.actorOf(Props[ShardActor], name= "shard2")
+    shard1 !Coordinated(PostData(2,Some(shard2))   )
+
+    val shardResult1 = Await.result(shard1 ? GetData, timeout.duration)
+    assert(shardResult1.isInstanceOf[Int] == true)
+    val data1 = shardResult1.asInstanceOf[Int]
+    assert(data1 == 2)
+
+    val shardResult2 = Await.result(shard1 ? GetData, timeout.duration)
+    assert(shardResult2 .isInstanceOf[Int] == true)
+    val data2 = shardResult2.asInstanceOf[Int]
+    assert(data2 == 2)
+
+
+  }
+  test("Verify transactions rollback"){
+
+    val system = ActorSystem("app")
+    implicit val timeout = akka.util.Timeout(10 seconds)
+    val shard1 = system.actorOf(Props[ShardActor], name= "shard1")
+    val shard2 = system.actorOf(Props[FaultyShardActor], name= "shard2")
+    shard1 !Coordinated(PostData(2,Some(shard2))   )
+
+    val shardResult1 = Await.result(shard1 ? GetData, timeout.duration)
+    assert(shardResult1.isInstanceOf[Int] == true)
+    val data1 = shardResult1.asInstanceOf[Int]
+    assert(data1 == 0)
+
+
 
 
   }

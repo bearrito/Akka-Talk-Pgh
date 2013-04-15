@@ -9,21 +9,14 @@ package DemoActors
  */
 
 import akka.actor.Actor
-
 import DemoMessages.{SynchronousSimpleMessage, SimpleMessage}
 
 class PrintingActor extends Actor {
-
   def receive = {
-
     case SimpleMessage(msg) => println(msg)
     case SynchronousSimpleMessage(msg) => sender ! SynchronousSimpleMessage("deadlocks be around here")
     case _ => println("I don't know what to do")
-
-
   }
-
-
-  }
+}
 
 

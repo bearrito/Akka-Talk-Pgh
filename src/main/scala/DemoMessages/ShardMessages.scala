@@ -1,5 +1,8 @@
 package DemoMessages
 
+import scala.Option
+import akka.actor.ActorRef
+
 /**
  * Created with IntelliJ IDEA.
  * User: me
@@ -16,6 +19,8 @@ case class CrashIt(waitBeforeCrash : Int) extends ShardMessage
 case class EndOfTheWorld(waitBeforeCrash : Int) extends ShardMessage
 case class Ping(i : String) extends  ShardMessage
 
+case object GetData extends ShardMessage
+case class PostData(i : Int,slave: Option[ActorRef]=None) extends ShardMessage
 
 
 case object ProxyMessage

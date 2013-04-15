@@ -26,13 +26,11 @@ class MoreTestsActor extends Actor{
        log.error(e,"crash")
        throw e
      }
-
      case d:ActorRef =>  {
 
        log.info("proxy ref received")
        otherActor = Some(d)
      }
-
      case ProxyMessage => {
 
        otherActor match {

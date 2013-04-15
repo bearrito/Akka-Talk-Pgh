@@ -21,11 +21,11 @@ class ConstrainedActor extends Actor{
   def accepting : Receive = {
 
     case i => {
-       state += 1
-       println("msg" + i)
-       println("state" + state.toString)
+      state += 1
+      println("msg" + i)
+      println("state" + state.toString)
 
-       sender ! "done"
+      sender ! "done"
       if (state == 2) {
         println("becoming busy")
         context.become(overloaded)
@@ -39,10 +39,10 @@ class ConstrainedActor extends Actor{
 
   }
 
-   def overloaded : Receive= {
-     case i =>  {
-       println("I'm busy. give up")
-       sender ! "busy"
-     }
-   }
+  def overloaded : Receive= {
+    case i =>  {
+      println("I'm busy. give up")
+      sender ! "busy"
+    }
+  }
 }

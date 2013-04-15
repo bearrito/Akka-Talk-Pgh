@@ -25,7 +25,7 @@ class ShardFacade extends Actor{
   implicit val timeout = akka.util.Timeout(5 seconds)
 
   override def preStart(){
-     monitor ! RegisterWorker(singleShard,self)
+    monitor ! RegisterWorker(singleShard,self)
 
   }
   override val supervisorStrategy = OneForOneStrategy(maxNrOfRetries = 3, withinTimeRange = 3 seconds) {

@@ -38,18 +38,18 @@ class SodaFSM extends Actor with FSM[VendingState,VendingData] {
     case Event(Dollar, u: Uninitialized) => goto(Dispensing) using Uninitialized(u.change + 100, u.sodaCount)
   }
   when(Vending){
-  case Event(ReturnMoney,d : Data) => goto(Idle) using Uninitialized(d.change,d.sodaCount)
-  case Event(Quarter,d : Data) => {
-     if (d.money == 75) {
-       goto(Dispensing) using(Uninitialized(d.change + 100,d.sodaCount))
-     }
-     else{
-       goto(Vending) using(Data(d.money + 25,d.change,d.sodaCount))
-     }
+    case Event(ReturnMoney,d : Data) => goto(Idle) using Uninitialized(d.change,d.sodaCount)
+    case Event(Quarter,d : Data) => {
+      if (d.money == 75) {
+        goto(Dispensing) using(Uninitialized(d.change + 100,d.sodaCount))
+      }
+      else{
+        goto(Vending) using(Data(d.money + 25,d.change,d.sodaCount))
+      }
 
-  }
-  case Event(Dollar, d : Data) => {goto(Dispensing) using Uninitialized(d.change + 100,d.sodaCount)}
-  case Event(ReturnMoney, d : Data)  => {goto(Idle) using Uninitialized(d.change, d.sodaCount)}
+    }
+    case Event(Dollar, d : Data) => {goto(Dispensing) using Uninitialized(d.change + 100,d.sodaCount)}
+    case Event(ReturnMoney, d : Data)  => {goto(Idle) using Uninitialized(d.change, d.sodaCount)}
   }
   when(Dispensing, stateTimeout = 250 millis){
     case Event(StateTimeout,u : Uninitialized) => goto(Idle) using Uninitialized(u.change,u.sodaCount - 1)

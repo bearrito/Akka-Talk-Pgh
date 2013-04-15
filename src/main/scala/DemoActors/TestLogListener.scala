@@ -15,6 +15,6 @@ class MyEventListener extends Actor {
     case Error(cause, logSource, logClass, message) => println("got it")
 
   }
-  }
+}
 
 
